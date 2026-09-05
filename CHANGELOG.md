@@ -5,6 +5,7 @@
 - Added the Spring Boot application foundation and public health endpoint.
 - Added PostgreSQL, Flyway, validation, Actuator, and Testcontainers dependencies.
 - Added environment-driven configuration and baseline tests.
+- Added Maven-wrapper verification and build checks in GitHub Actions.
 
 ## 0.1.0 - Portfolio Rebuild Started
 

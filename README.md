@@ -1,5 +1,7 @@
 # EAV Dispatch Service
 
+[![CI](https://github.com/eav-labs-dev/eav-dispatch-service/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/eav-labs-dev/eav-dispatch-service/actions/workflows/ci.yml)
+
 Spring Boot microservice for shipments, drivers, vehicles, and dispatch workflows.
 
 ## Project Status
@@ -28,7 +30,7 @@ set -a && . ./.env && set +a
 
 Verify the service at `GET http://localhost:8080/api/v1/health`.
 
-Run the test suite with:
+Run the same verification used in CI with:
 
 ```bash
 ./mvnw verify
