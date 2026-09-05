@@ -6,6 +6,7 @@
 - Added PostgreSQL, Flyway, validation, Actuator, and Testcontainers dependencies.
 - Added environment-driven configuration and baseline tests.
 - Added Maven-wrapper verification and build checks in GitHub Actions.
+- Added a non-root multi-stage container image, PostgreSQL Compose environment, and delivery documentation.
 
 ## 0.1.0 - Portfolio Rebuild Started
 
