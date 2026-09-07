@@ -38,7 +38,13 @@ Run the same verification used in CI with:
 
 ## Planned MVP Features
 
-The MVP scope will be built incrementally with real commits and documented progress.
+- Shipment CRUD with validated, unique business references
+- Drivers and vehicles
+- Driver/vehicle assignment
+- Controlled shipment lifecycle transitions
+- Audit history
+- OpenAPI documentation
+- PostgreSQL integration tests
 
 ## Repository Standard
 
