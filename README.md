@@ -56,6 +56,13 @@ The MVP scope will be built incrementally with real commits and documented progr
 - OpenAPI documentation and PostgreSQL integration testing
 
 Progress and intentional deferrals are tracked in the [Roadmap](docs/roadmap.md).
+- Shipment CRUD with validated, unique business references
+- Drivers and vehicles
+- Driver/vehicle assignment
+- Controlled shipment lifecycle transitions
+- Audit history
+- OpenAPI documentation
+- PostgreSQL integration tests
 
 ## Repository Standard
 
