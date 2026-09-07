@@ -1,10 +1,12 @@
 # EAV Dispatch Service
 
+[![CI](https://github.com/eav-labs-dev/eav-dispatch-service/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/eav-labs-dev/eav-dispatch-service/actions/workflows/ci.yml)
+
 Spring Boot microservice for shipments, drivers, vehicles, and dispatch workflows.
 
 ## Project Status
 
-This repository is part of the EAV Labs portfolio rebuild and is currently under active development.
+The Spring Boot application foundation is under active development on `dev`.
 
 ## About
 
@@ -15,6 +17,24 @@ The goal is to demonstrate practical engineering through clear documentation, cl
 ## Tech Stack
 
 Java, Spring Boot, PostgreSQL, Docker, GitHub Actions, Testcontainers.
+
+## Local Setup
+
+Requirements: Java 17+ and PostgreSQL 16+.
+
+```bash
+cp .env.example .env
+set -a && . ./.env && set +a
+./mvnw spring-boot:run
+```
+
+Verify the service at `GET http://localhost:8080/api/v1/health`.
+
+Run the same verification used in CI with:
+
+```bash
+./mvnw verify
+```
 
 ## Planned MVP Features
 
