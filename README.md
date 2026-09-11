@@ -6,7 +6,7 @@ Spring Boot microservice for shipments, drivers, vehicles, and dispatch workflow
 
 ## Project Status
 
-The Spring Boot application foundation is under active development on `dev`.
+The Spring Boot application foundation is under active development on `dev`. The service has reproducible Maven, CI, PostgreSQL, and container foundations; dispatch capabilities are being added in bounded pull requests.
 
 ## About
 
@@ -36,9 +36,26 @@ Run the same verification used in CI with:
 ./mvnw verify
 ```
 
+For a complete containerized environment instead:
+
+```bash
+docker compose up --build
+curl --fail http://localhost:8080/api/v1/health
+```
+
+See [Deployment Guide](docs/deployment.md) for lifecycle and release-gate commands.
+
 ## Planned MVP Features
 
-The MVP scope will be built incrementally with real commits and documented progress.
+- Shipment CRUD with validated, unique business references
+- Drivers and vehicles
+- Driver/vehicle assignment
+- Controlled shipment lifecycle transitions
+- Audit history
+- OpenAPI documentation
+- PostgreSQL integration tests
+
+Progress and intentional deferrals are tracked in the [Roadmap](docs/roadmap.md).
 
 ## Repository Standard
 
@@ -56,3 +73,5 @@ This repo will include:
 ## What This Project Demonstrates
 
 Enterprise backend engineering, Java/Spring Boot, microservice design, integration testing, and logistics workflow modelling.
+
+See [Architecture](docs/architecture.md) for the modular boundaries, persistence ownership, and delivery model.
