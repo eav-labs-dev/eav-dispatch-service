@@ -21,7 +21,9 @@ public class OpenApiConfiguration {
      * @return configured OpenAPI model
      */
     @Bean
-    public OpenAPI dispatchOpenApi(@Value("${info.app.version}") String applicationVersion) {
+    public OpenAPI dispatchOpenApi(
+            @Value("${info.app.version:0.1.0-SNAPSHOT}") String applicationVersion
+    ) {
         return new OpenAPI().info(new Info()
                 .title("EAV Dispatch API")
                 .version(applicationVersion)
