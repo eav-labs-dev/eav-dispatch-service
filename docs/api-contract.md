@@ -23,3 +23,9 @@ All JSON responses use the envelope:
 | `DELETE` | `/api/v1/shipments/{id}` | Delete a shipment |
 
 Lifecycle transitions are intentionally excluded from CRUD requests and will be exposed through a dedicated transition endpoint.
+
+## Interactive documentation
+
+When the service is running, the generated OpenAPI description is available at `/v3/api-docs` and `/v3/api-docs.yaml`. Swagger UI is available at `/swagger-ui.html`.
+
+The document version uses `APP_VERSION`, which keeps local, release, and deployed API metadata aligned.

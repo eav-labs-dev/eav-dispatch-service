@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added generated OpenAPI 3 documentation and Swagger UI with runtime version metadata.
+
 - Added the Spring Boot application foundation and public health endpoint.
 - Added PostgreSQL, Flyway, validation, Actuator, and Testcontainers dependencies.
 - Added environment-driven configuration and baseline tests.
