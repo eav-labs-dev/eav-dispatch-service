@@ -26,7 +26,7 @@ Shared API response and exception-handling types provide a stable external envel
 
 PostgreSQL is the source of truth. Hibernate validates mappings against the schema but does not create or mutate production tables. Flyway migrations are append-only and run during application startup.
 
-The test profile uses H2 for fast foundation and service tests. PostgreSQL Testcontainers coverage is planned for persistence behavior that depends on PostgreSQL semantics.
+The test profile uses H2 for fast foundation and service tests. A separate Testcontainers integration test starts PostgreSQL 17, applies Flyway migrations, lets Hibernate validate the mappings, and checks PostgreSQL-specific column semantics. This keeps the fast feedback loop while exercising the production database engine in CI.
 
 ## Configuration
 
