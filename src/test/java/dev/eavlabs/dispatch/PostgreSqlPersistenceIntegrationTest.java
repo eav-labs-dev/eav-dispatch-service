@@ -42,14 +42,14 @@ class PostgreSqlPersistenceIntegrationTest {
                         + "AND column_name = 'scheduled_pickup_at'",
                 String.class
         );
-        var appliedMigrations = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM flyway_schema_history WHERE success = true",
+        var shipmentMigrationApplied = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM flyway_schema_history WHERE version = '1' AND success = true",
                 Integer.class
         );
 
         assertThat(serverVersion).isGreaterThanOrEqualTo(170000);
         assertThat(shipmentTableExists).isTrue();
         assertThat(pickupColumnType).isEqualTo("timestamp with time zone");
-        assertThat(appliedMigrations).isEqualTo(1);
+        assertThat(shipmentMigrationApplied).isEqualTo(1);
     }
 }
