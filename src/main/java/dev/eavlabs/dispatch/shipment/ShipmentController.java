@@ -55,6 +55,35 @@ public class ShipmentController {
         return ApiResponse.success("SHIPMENT_UPDATED", "Shipment updated", service.update(id, request));
     }
 
+    @PutMapping("/{id}/assignment")
+    public ApiResponse<ShipmentResponse> assign(
+            @PathVariable UUID id,
+            @Valid @RequestBody AssignShipmentRequest request
+    ) {
+        return ApiResponse.success("SHIPMENT_ASSIGNED", "Shipment assigned", service.assign(id, request));
+    }
+
+    @PostMapping("/{id}/transitions")
+    public ApiResponse<ShipmentResponse> transition(
+            @PathVariable UUID id,
+            @Valid @RequestBody TransitionShipmentRequest request
+    ) {
+        return ApiResponse.success(
+                "SHIPMENT_STATUS_UPDATED",
+                "Shipment status updated",
+                service.transition(id, request)
+        );
+    }
+
+    @GetMapping("/{id}/history")
+    public ApiResponse<List<ShipmentStatusHistoryResponse>> history(@PathVariable UUID id) {
+        return ApiResponse.success(
+                "SHIPMENT_HISTORY_RETRIEVED",
+                "Shipment history retrieved",
+                service.history(id)
+        );
+    }
+
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable UUID id) {
         service.delete(id);
