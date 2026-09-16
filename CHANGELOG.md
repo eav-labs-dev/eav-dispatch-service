@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Vehicle CRUD with normalized unique registrations, fleet availability, payload limits, and Flyway persistence.
+
 - Added the Spring Boot application foundation and public health endpoint.
 - Added PostgreSQL, Flyway, validation, Actuator, and Testcontainers dependencies.
 - Added environment-driven configuration and baseline tests.
