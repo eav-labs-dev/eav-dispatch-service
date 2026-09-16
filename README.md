@@ -48,7 +48,7 @@ See [Deployment Guide](docs/deployment.md) for lifecycle and release-gate comman
 ## Planned MVP Features
 
 - Shipment CRUD with validated, unique business references
-- Drivers and vehicles
+- Driver and vehicle fleet management
 - Driver/vehicle assignment
 - Controlled shipment lifecycle transitions
 - Audit history
