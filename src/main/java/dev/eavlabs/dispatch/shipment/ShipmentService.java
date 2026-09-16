@@ -161,7 +161,10 @@ public class ShipmentService {
 
     @Transactional
     public void delete(UUID id) {
-        repository.delete(find(id));
+        var shipment = find(id);
+        historyRepository.deleteAllByShipmentId(id);
+        historyRepository.flush();
+        repository.delete(shipment);
     }
 
     private Shipment find(UUID id) {

@@ -11,4 +11,6 @@ import java.util.UUID;
 public interface ShipmentStatusHistoryRepository extends JpaRepository<ShipmentStatusHistory, UUID> {
 
     List<ShipmentStatusHistory> findByShipmentIdOrderByChangedAtAsc(UUID shipmentId);
+
+    void deleteAllByShipmentId(UUID shipmentId);
 }
