@@ -37,8 +37,18 @@ The service requires these environment variables:
 | `DATABASE_PASSWORD` | Database credential |
 | `PORT` | HTTP port; defaults to `8080` |
 | `APP_VERSION` | Version reported by the health resource |
+| `SHUTDOWN_TIMEOUT` | Maximum time for in-flight requests to finish during shutdown; defaults to `20s` |
 
-A deployment platform should inject credentials through its secret store, run one application instance for the initial MVP, and provide a managed PostgreSQL database with backups. Health monitoring can call `/actuator/health`; the public reviewer endpoint is `/api/v1/health`.
+A deployment platform should inject credentials through its secret store, run one application instance for the initial MVP, and provide a managed PostgreSQL database with backups. Forwarded headers are interpreted through Spring's framework strategy so generated URLs and request metadata remain correct behind a trusted proxy.
+
+Use the Actuator probe groups for orchestration:
+
+| Probe | Endpoint | Meaning |
+| --- | --- | --- |
+| Liveness | `/actuator/health/liveness` | The application process can continue running |
+| Readiness | `/actuator/health/readiness` | The application and PostgreSQL dependency can receive traffic |
+
+Health details are not exposed. The public reviewer endpoint remains `/api/v1/health`, while deployment traffic should use the readiness probe. The service handles `SIGTERM` with graceful shutdown and gives in-flight requests up to `SHUTDOWN_TIMEOUT` to finish.
 
 ## Release gate
 

@@ -24,11 +24,13 @@ services:
       DATABASE_PASSWORD: eav_password
       APP_VERSION: 0.1.0-SNAPSHOT
       PORT: 8080
+      SHUTDOWN_TIMEOUT: 20s
     depends_on:
       postgres:
         condition: service_healthy
     ports:
       - "8080:8080"
+    stop_grace_period: 25s
 
 volumes:
   dispatch-postgres:
