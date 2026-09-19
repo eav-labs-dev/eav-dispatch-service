@@ -31,15 +31,39 @@ jobs:
         run: |
           set -euo pipefail
           for attempt in {1..60}; do
-            if curl --fail --silent --show-error http://localhost:8080/actuator/health; then
-              docker compose ps
-              exit 0
+            if curl --fail --silent --show-error http://localhost:8080/actuator/health \
+              | jq --exit-status '.status == "UP"' > /dev/null; then
+              break
             fi
             sleep 2
           done
 
-          docker compose logs
-          exit 1
+          curl --fail --silent --show-error http://localhost:8080/actuator/health \
+            | jq --exit-status '.status == "UP"' > /dev/null || {
+              docker compose logs
+              exit 1
+            }
+
+      - name: Verify public API contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error http://localhost:8080/api/v1/health \
+            | jq --exit-status '
+                .success == true
+                and .code == "HEALTHY"
+                and .data.service == "eav-dispatch-service"
+                and .data.status == "UP"
+                and .data.version == "0.1.0-SNAPSHOT"
+              ' > /dev/null
+
+      - name: Verify non-root runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          container_uid="$(docker compose exec --no-TTY api id --user)"
+          test "$container_uid" -ne 0
+          docker compose ps
 
       - name: Stop application stack
         if: always()
