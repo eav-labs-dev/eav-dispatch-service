@@ -5,6 +5,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.mock.http.MockHttpInputMessage;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,6 +38,23 @@ class ApiExceptionHandlerTest {
 
         assertFailure(response.getStatusCode().value(), response.getBody(), "DATA_CONFLICT");
         assertThat(response.getBody().message()).doesNotContain("database");
+    }
+
+    @Test
+    void normalizesInvalidPathParameters() {
+        var exception = new MethodArgumentTypeMismatchException(
+                "not-a-uuid",
+                UUID.class,
+                "id",
+                null,
+                new IllegalArgumentException("Invalid UUID")
+        );
+
+        var response = handler.handleTypeMismatch(exception);
+
+        assertFailure(response.getStatusCode().value(), response.getBody(), "INVALID_PARAMETER");
+        assertThat(response.getBody().error().fields()).containsEntry("id", "Invalid value");
+        assertThat(response.getBody().message()).doesNotContain("not-a-uuid");
     }
 
     private void assertFailure(
