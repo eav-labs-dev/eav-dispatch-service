@@ -28,6 +28,7 @@ class ApiExceptionHandlerTest {
         var response = handler.handleMalformedRequest(exception);
 
         assertFailure(response.getStatusCode().value(), response.getBody(), "MALFORMED_REQUEST");
+        assertThat(response.getBody().error().fields()).isEmpty();
     }
 
     @Test
@@ -38,6 +39,7 @@ class ApiExceptionHandlerTest {
 
         assertFailure(response.getStatusCode().value(), response.getBody(), "DATA_CONFLICT");
         assertThat(response.getBody().message()).doesNotContain("database");
+        assertThat(response.getBody().error().fields()).isEmpty();
     }
 
     @Test
@@ -68,6 +70,5 @@ class ApiExceptionHandlerTest {
         assertThat(body.code()).isEqualTo(expectedCode);
         assertThat(body.data()).isNull();
         assertThat(body.error().type()).isEqualTo(expectedCode);
-        assertThat(body.error().fields()).isEmpty();
     }
 }
