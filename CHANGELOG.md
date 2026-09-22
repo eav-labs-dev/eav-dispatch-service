@@ -6,7 +6,7 @@
 
 - Vehicle CRUD with normalized unique registrations, fleet availability, payload limits, and Flyway persistence.
 - Added driver CRUD with normalized employee/licence identifiers, availability state, validation, and Flyway persistence.
-- Added driver/vehicle assignment, guarded shipment transitions, and persisted lifecycle audit history.
+- Added driver/vehicle assignment with active-resource double-booking protection, guarded shipment transitions, and persisted lifecycle audit history.
 
 - Added the Spring Boot application foundation and public health endpoint.
 - Added PostgreSQL, Flyway, validation, Actuator, and Testcontainers dependencies.

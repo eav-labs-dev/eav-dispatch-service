@@ -98,6 +98,55 @@ class DispatchWorkflowTest {
                 .hasMessage("Shipment cannot transition from CANCELLED to CREATED");
     }
 
+
+    @Test
+    void preventsResourceDoubleBookingUntilTheActiveShipmentIsTerminal() {
+        var firstShipment = createShipment("WF-003");
+        var nextShipment = createShipment("WF-004");
+        var firstDriver = driverService.create(new CreateDriverRequest(
+                "DRV-WF-003", "Ama Mensah", "+233 24 555 0101",
+                "LIC-WF-003", "C", LocalDate.now().plusYears(2)
+        ));
+        var secondDriver = driverService.create(new CreateDriverRequest(
+                "DRV-WF-004", "Kojo Asante", "+233 24 555 0102",
+                "LIC-WF-004", "C", LocalDate.now().plusYears(2)
+        ));
+        var firstVehicle = vehicleService.create(new CreateVehicleRequest(
+                "GT WF 003", "Scania", "R500", VehicleType.TRUCK, 24_000
+        ));
+        var secondVehicle = vehicleService.create(new CreateVehicleRequest(
+                "GT WF 004", "MAN", "TGX", VehicleType.TRUCK, 24_000
+        ));
+
+        shipmentService.assign(
+                firstShipment.id(), new AssignShipmentRequest(firstDriver.id(), firstVehicle.id())
+        );
+
+        assertThatThrownBy(() -> shipmentService.assign(
+                nextShipment.id(), new AssignShipmentRequest(firstDriver.id(), secondVehicle.id())
+        ))
+                .isInstanceOf(ResourceConflictException.class)
+                .hasMessage("Driver is already assigned to an active shipment");
+
+        shipmentService.transition(
+                firstShipment.id(), new TransitionShipmentRequest(ShipmentStatus.IN_TRANSIT, null)
+        );
+        assertThatThrownBy(() -> shipmentService.assign(
+                nextShipment.id(), new AssignShipmentRequest(secondDriver.id(), firstVehicle.id())
+        ))
+                .isInstanceOf(ResourceConflictException.class)
+                .hasMessage("Vehicle is already assigned to an active shipment");
+
+        shipmentService.transition(
+                firstShipment.id(), new TransitionShipmentRequest(ShipmentStatus.DELIVERED, null)
+        );
+
+        var reassigned = shipmentService.assign(
+                nextShipment.id(), new AssignShipmentRequest(firstDriver.id(), firstVehicle.id())
+        );
+        assertThat(reassigned.status()).isEqualTo(ShipmentStatus.ASSIGNED);
+    }
+
     private ShipmentResponse createShipment(String reference) {
         return shipmentService.create(new CreateShipmentRequest(
                 reference,

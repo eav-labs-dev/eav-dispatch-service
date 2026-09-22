@@ -25,7 +25,7 @@ All JSON responses use the envelope:
 | `GET` | `/api/v1/shipments/{id}/history` | Read chronological lifecycle audit history |
 | `DELETE` | `/api/v1/shipments/{id}` | Delete a shipment |
 
-Assignments move shipments from `CREATED` to `ASSIGNED`. The transition endpoint permits `ASSIGNED` to `IN_TRANSIT`, `IN_TRANSIT` to `DELIVERED`, and cancellation from `CREATED` or `ASSIGNED`. Terminal states cannot transition again.
+Assignments move shipments from `CREATED` to `ASSIGNED`. A driver or vehicle can belong to only one shipment in `ASSIGNED` or `IN_TRANSIT`; the resource becomes eligible again after delivery or cancellation. The transition endpoint permits `ASSIGNED` to `IN_TRANSIT`, `IN_TRANSIT` to `DELIVERED`, and cancellation from `CREATED` or `ASSIGNED`. Terminal states cannot transition again.
 
 ## Vehicle endpoints
 
