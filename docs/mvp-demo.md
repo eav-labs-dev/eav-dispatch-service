@@ -19,7 +19,7 @@ demo_suffix=$(python3 -c 'import uuid; print(str(uuid.uuid4())[:8].upper())')
 licence_expiry=$(python3 -c 'from datetime import date; print(date(date.today().year + 2, 12, 31))')
 ```
 
-## Create a driver, vehicle, and shipment
+## Create a driver, vehicle, and shipments
 
 ```bash
 driver=$(curl --fail-with-body --silent --show-error \
@@ -39,17 +39,41 @@ shipment=$(curl --fail-with-body --silent --show-error \
   -H 'Content-Type: application/json' \
   --data "{\"reference\":\"DSP-$demo_suffix\",\"description\":\"Medical equipment\",\"origin\":\"Tema\",\"destination\":\"Kumasi\"}")
 shipment_id=$(printf '%s' "$shipment" | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["id"])')
+
+waiting_shipment=$(curl --fail-with-body --silent --show-error \
+  -X POST "$dispatch_api/shipments" \
+  -H 'Content-Type: application/json' \
+  --data "{\"reference\":\"WAIT-$demo_suffix\",\"description\":\"Replacement equipment\",\"origin\":\"Accra\",\"destination\":\"Tamale\"}")
+waiting_shipment_id=$(printf '%s' "$waiting_shipment" | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["id"])')
 ```
 
-Each create request returns HTTP 201. The driver and vehicle start active, while the shipment starts in `CREATED`.
+Each create request returns HTTP 201. The driver and vehicle start active, while both shipments start in `CREATED`.
 
-## Assign and deliver the shipment
+## Assign the first shipment
 
 ```bash
 curl --fail-with-body -X PUT "$dispatch_api/shipments/$shipment_id/assignment" \
   -H 'Content-Type: application/json' \
   --data "{\"driverId\":\"$driver_id\",\"vehicleId\":\"$vehicle_id\"}"
+```
 
+Assignment moves the first shipment to `ASSIGNED` and reserves both resources while it remains active.
+
+## Prove the resource-reservation guard
+
+This request intentionally omits `--fail-with-body` because it must fail.
+
+```bash
+curl --include -X PUT "$dispatch_api/shipments/$waiting_shipment_id/assignment" \
+  -H 'Content-Type: application/json' \
+  --data "{\"driverId\":\"$driver_id\",\"vehicleId\":\"$vehicle_id\"}"
+```
+
+Expect HTTP 409 with code `RESOURCE_CONFLICT`. A driver or vehicle already attached to an `ASSIGNED` or `IN_TRANSIT` shipment cannot be double-booked.
+
+## Deliver and release the resources
+
+```bash
 curl --fail-with-body -X POST "$dispatch_api/shipments/$shipment_id/transitions" \
   -H 'Content-Type: application/json' \
   --data '{"targetStatus":"IN_TRANSIT","note":"Departed Tema"}'
@@ -57,9 +81,13 @@ curl --fail-with-body -X POST "$dispatch_api/shipments/$shipment_id/transitions"
 curl --fail-with-body -X POST "$dispatch_api/shipments/$shipment_id/transitions" \
   -H 'Content-Type: application/json' \
   --data '{"targetStatus":"DELIVERED","note":"Received in Kumasi"}'
+
+curl --fail-with-body -X PUT "$dispatch_api/shipments/$waiting_shipment_id/assignment" \
+  -H 'Content-Type: application/json' \
+  --data "{\"driverId\":\"$driver_id\",\"vehicleId\":\"$vehicle_id\"}"
 ```
 
-Assignment moves the shipment to `ASSIGNED`. The controlled transitions then move it through `IN_TRANSIT` to the terminal `DELIVERED` state.
+The controlled transitions move the first shipment through `IN_TRANSIT` to `DELIVERED`. Delivery releases the driver and vehicle, so the waiting shipment can then enter `ASSIGNED`.
 
 ## Inspect the audit history
 
