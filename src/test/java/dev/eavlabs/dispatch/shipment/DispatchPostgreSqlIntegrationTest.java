@@ -2,6 +2,7 @@ package dev.eavlabs.dispatch.shipment;
 
 import dev.eavlabs.dispatch.driver.CreateDriverRequest;
 import dev.eavlabs.dispatch.driver.DriverService;
+import dev.eavlabs.dispatch.shared.error.ResourceConflictException;
 import dev.eavlabs.dispatch.vehicle.CreateVehicleRequest;
 import dev.eavlabs.dispatch.vehicle.VehicleService;
 import dev.eavlabs.dispatch.vehicle.VehicleType;
@@ -18,6 +19,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Verifies the complete dispatch workflow against the PostgreSQL version used by Compose.
@@ -100,4 +102,86 @@ class DispatchPostgreSqlIntegrationTest {
                         ShipmentStatus.DELIVERED
                 );
     }
+    @Test
+    void reservesActiveResourcesAndReleasesThemAfterDelivery() {
+        var firstDriver = driverService.create(new CreateDriverRequest(
+                "DRV-PG-002",
+                "Kojo Asante",
+                "+233 24 000 0002",
+                "LIC-PG-002",
+                "C",
+                LocalDate.now().plusYears(2)
+        ));
+        var secondDriver = driverService.create(new CreateDriverRequest(
+                "DRV-PG-003",
+                "Akosua Owusu",
+                "+233 24 000 0003",
+                "LIC-PG-003",
+                "C",
+                LocalDate.now().plusYears(2)
+        ));
+        var firstVehicle = vehicleService.create(new CreateVehicleRequest(
+                "GT PG 1002",
+                "Scania",
+                "R500",
+                VehicleType.TRUCK,
+                24_000
+        ));
+        var secondVehicle = vehicleService.create(new CreateVehicleRequest(
+                "GT PG 1003",
+                "MAN",
+                "TGX",
+                VehicleType.TRUCK,
+                24_000
+        ));
+        var activeShipment = shipmentService.create(new CreateShipmentRequest(
+                "DSP-PG-002",
+                "Industrial parts",
+                "Tema",
+                "Takoradi",
+                OffsetDateTime.now().plusDays(1)
+        ));
+        var waitingShipment = shipmentService.create(new CreateShipmentRequest(
+                "DSP-PG-003",
+                "Replacement parts",
+                "Accra",
+                "Tamale",
+                OffsetDateTime.now().plusDays(2)
+        ));
+
+        shipmentService.assign(
+                activeShipment.id(),
+                new AssignShipmentRequest(firstDriver.id(), firstVehicle.id())
+        );
+
+        assertThatThrownBy(() -> shipmentService.assign(
+                waitingShipment.id(),
+                new AssignShipmentRequest(firstDriver.id(), secondVehicle.id())
+        ))
+                .isInstanceOf(ResourceConflictException.class)
+                .hasMessage("Driver is already assigned to an active shipment");
+
+        shipmentService.transition(
+                activeShipment.id(),
+                new TransitionShipmentRequest(ShipmentStatus.IN_TRANSIT, null)
+        );
+        assertThatThrownBy(() -> shipmentService.assign(
+                waitingShipment.id(),
+                new AssignShipmentRequest(secondDriver.id(), firstVehicle.id())
+        ))
+                .isInstanceOf(ResourceConflictException.class)
+                .hasMessage("Vehicle is already assigned to an active shipment");
+
+        shipmentService.transition(
+                activeShipment.id(),
+                new TransitionShipmentRequest(ShipmentStatus.DELIVERED, null)
+        );
+
+        var reassigned = shipmentService.assign(
+                waitingShipment.id(),
+                new AssignShipmentRequest(firstDriver.id(), firstVehicle.id())
+        );
+        assertThat(reassigned.status()).isEqualTo(ShipmentStatus.ASSIGNED);
+    }
+
 }
