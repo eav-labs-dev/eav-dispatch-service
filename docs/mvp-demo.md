@@ -106,9 +106,13 @@ This request is expected to fail, so it intentionally omits `--fail-with-body`.
 curl --include -X POST "$dispatch_api/shipments/$shipment_id/transitions" \
   -H 'Content-Type: application/json' \
   --data '{"targetStatus":"IN_TRANSIT","note":"Invalid reversal"}'
+
+curl --include -X DELETE "$dispatch_api/shipments/$shipment_id"
+
+curl --fail-with-body "$dispatch_api/shipments/$shipment_id/history"
 ```
 
-Expect HTTP 409 with code `RESOURCE_CONFLICT`. Delivered shipments cannot transition or be edited.
+Both mutation requests must return HTTP 409 with code `RESOURCE_CONFLICT`. Delivered shipments cannot transition, be edited, or be hard-deleted. The final history request must still return the four audit entries, proving that operational records remain available after a rejected deletion.
 
 ## Finish
 
