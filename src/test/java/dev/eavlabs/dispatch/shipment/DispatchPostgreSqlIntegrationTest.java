@@ -106,6 +106,10 @@ class DispatchPostgreSqlIntegrationTest {
                         ShipmentStatus.IN_TRANSIT,
                         ShipmentStatus.DELIVERED
                 );
+        assertThatThrownBy(() -> shipmentService.delete(shipment.id()))
+                .isInstanceOf(ResourceConflictException.class)
+                .hasMessage("Only created shipments can be deleted");
+        assertThat(shipmentService.history(shipment.id())).hasSize(4);
     }
     @Test
     void reservesActiveResourcesAndReleasesThemAfterDelivery() {
