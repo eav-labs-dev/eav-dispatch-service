@@ -23,3 +23,15 @@ All JSON responses use the envelope:
 | `DELETE` | `/api/v1/shipments/{id}` | Delete a shipment |
 
 Lifecycle transitions are intentionally excluded from CRUD requests and will be exposed through a dedicated transition endpoint.
+
+## Driver endpoints
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/v1/drivers` | Create an active driver |
+| `GET` | `/api/v1/drivers` | List drivers |
+| `GET` | `/api/v1/drivers/{id}` | Retrieve one driver |
+| `PUT` | `/api/v1/drivers/{id}` | Update mutable details and availability |
+| `DELETE` | `/api/v1/drivers/{id}` | Delete a driver |
+
+Employee numbers and licence numbers are immutable, trimmed, uppercased, and unique. New drivers are active by default.
