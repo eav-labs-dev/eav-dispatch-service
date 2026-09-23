@@ -17,6 +17,11 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -182,6 +187,101 @@ class DispatchPostgreSqlIntegrationTest {
                 new AssignShipmentRequest(firstDriver.id(), firstVehicle.id())
         );
         assertThat(reassigned.status()).isEqualTo(ShipmentStatus.ASSIGNED);
+    }
+
+    @Test
+    void serializesConcurrentAssignmentsForTheSameDriver() throws Exception {
+        var driver = driverService.create(new CreateDriverRequest(
+                "DRV-PG-004",
+                "Yaw Addo",
+                "+233 24 000 0004",
+                "LIC-PG-004",
+                "C",
+                LocalDate.now().plusYears(2)
+        ));
+        var firstVehicle = vehicleService.create(new CreateVehicleRequest(
+                "GT PG 1004",
+                "Mercedes-Benz",
+                "Actros",
+                VehicleType.TRUCK,
+                23_000
+        ));
+        var secondVehicle = vehicleService.create(new CreateVehicleRequest(
+                "GT PG 1005",
+                "DAF",
+                "XF",
+                VehicleType.TRUCK,
+                23_000
+        ));
+        var firstShipment = shipmentService.create(new CreateShipmentRequest(
+                "DSP-PG-004",
+                "Concurrent assignment one",
+                "Tema",
+                "Kumasi",
+                OffsetDateTime.now().plusDays(1)
+        ));
+        var secondShipment = shipmentService.create(new CreateShipmentRequest(
+                "DSP-PG-005",
+                "Concurrent assignment two",
+                "Tema",
+                "Takoradi",
+                OffsetDateTime.now().plusDays(1)
+        ));
+
+        var ready = new CountDownLatch(2);
+        var start = new CountDownLatch(1);
+        var executor = Executors.newFixedThreadPool(2);
+
+        try {
+            var firstAttempt = executor.submit(() -> attemptAssignment(
+                    ready, start, firstShipment.id(), driver.id(), firstVehicle.id()
+            ));
+            var secondAttempt = executor.submit(() -> attemptAssignment(
+                    ready, start, secondShipment.id(), driver.id(), secondVehicle.id()
+            ));
+
+            var bothReady = ready.await(10, TimeUnit.SECONDS);
+            start.countDown();
+
+            assertThat(bothReady).isTrue();
+            assertThat(List.of(
+                    firstAttempt.get(20, TimeUnit.SECONDS),
+                    secondAttempt.get(20, TimeUnit.SECONDS)
+            )).containsExactlyInAnyOrder("ASSIGNED", "CONFLICT");
+
+            var activeAssignments = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM shipments "
+                            + "WHERE driver_id = ? AND status IN ('ASSIGNED', 'IN_TRANSIT')",
+                    Integer.class,
+                    driver.id()
+            );
+            assertThat(activeAssignments).isEqualTo(1);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    private String attemptAssignment(
+            CountDownLatch ready,
+            CountDownLatch start,
+            UUID shipmentId,
+            UUID driverId,
+            UUID vehicleId
+    ) throws InterruptedException {
+        ready.countDown();
+        if (!start.await(10, TimeUnit.SECONDS)) {
+            return "TIMEOUT";
+        }
+
+        try {
+            return shipmentService.assign(
+                    shipmentId,
+                    new AssignShipmentRequest(driverId, vehicleId)
+            ).status().name();
+        } catch (ResourceConflictException exception) {
+            assertThat(exception).hasMessage("Driver is already assigned to an active shipment");
+            return "CONFLICT";
+        }
     }
 
 }
