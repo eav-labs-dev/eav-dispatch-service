@@ -147,6 +147,31 @@ class DispatchWorkflowTest {
         assertThat(reassigned.status()).isEqualTo(ShipmentStatus.ASSIGNED);
     }
 
+
+    @Test
+    void preservesShipmentAndAuditHistoryOnceDispatchBegins() {
+        var shipment = createShipment("WF-005");
+        var driver = driverService.create(new CreateDriverRequest(
+                "DRV-WF-005", "Esi Nyarko", "+233 24 555 0105",
+                "LIC-WF-005", "C", LocalDate.now().plusYears(2)
+        ));
+        var vehicle = vehicleService.create(new CreateVehicleRequest(
+                "GT WF 005", "Iveco", "S-Way", VehicleType.TRUCK, 22_000
+        ));
+
+        shipmentService.assign(
+                shipment.id(), new AssignShipmentRequest(driver.id(), vehicle.id())
+        );
+
+        assertThatThrownBy(() -> shipmentService.delete(shipment.id()))
+                .isInstanceOf(ResourceConflictException.class)
+                .hasMessage("Only created shipments can be deleted");
+        assertThat(shipmentService.get(shipment.id()).status()).isEqualTo(ShipmentStatus.ASSIGNED);
+        assertThat(shipmentService.history(shipment.id()))
+                .extracting(ShipmentStatusHistoryResponse::newStatus)
+                .containsExactly(ShipmentStatus.CREATED, ShipmentStatus.ASSIGNED);
+    }
+
     private ShipmentResponse createShipment(String reference) {
         return shipmentService.create(new CreateShipmentRequest(
                 reference,

@@ -165,9 +165,17 @@ public class ShipmentService {
                 .toList();
     }
 
+    /**
+     * Deletes a shipment only before operational dispatch begins.
+     *
+     * @param id shipment identifier
+     */
     @Transactional
     public void delete(UUID id) {
         var shipment = find(id);
+        if (shipment.getStatus() != ShipmentStatus.CREATED) {
+            throw new ResourceConflictException("Only created shipments can be deleted");
+        }
         historyRepository.deleteAllByShipmentId(id);
         historyRepository.flush();
         repository.delete(shipment);
