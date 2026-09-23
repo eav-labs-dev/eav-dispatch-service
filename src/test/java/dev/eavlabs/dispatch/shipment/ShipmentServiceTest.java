@@ -71,6 +71,29 @@ class ShipmentServiceTest {
         assertThat(repository.existsById(shipment.id())).isFalse();
     }
 
+    @Test
+    void updateResponseIncludesFlushedTimestampAndPreservesIdentity() {
+        var created = service.create(createRequest("GH-UPDATE"));
+        repository.flush();
+        var pickup = OffsetDateTime.now().plusDays(2);
+
+        var updated = service.update(created.id(), new UpdateShipmentRequest(
+                " Revised delivery ", " Tema ", " Tamale ", pickup
+        ));
+        repository.flush();
+        var persisted = repository.findById(created.id()).orElseThrow();
+
+        assertThat(updated.id()).isEqualTo(created.id());
+        assertThat(updated.reference()).isEqualTo(created.reference());
+        assertThat(updated.status()).isEqualTo(ShipmentStatus.CREATED);
+        assertThat(updated.description()).isEqualTo("Revised delivery");
+        assertThat(updated.origin()).isEqualTo("Tema");
+        assertThat(updated.destination()).isEqualTo("Tamale");
+        assertThat(updated.scheduledPickupAt()).isEqualTo(pickup);
+        assertThat(updated.createdAt()).isEqualTo(created.createdAt());
+        assertThat(updated.updatedAt()).isEqualTo(persisted.getUpdatedAt());
+    }
+
     private CreateShipmentRequest createRequest(String reference) {
         return new CreateShipmentRequest(
                 reference,
