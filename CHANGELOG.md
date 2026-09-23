@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Added driver CRUD with normalized employee/licence identifiers, availability state, validation, and Flyway persistence.
+- Fixed shipment update responses to include the timestamp refreshed by persistence callbacks.
 
 - Added the Spring Boot application foundation and public health endpoint.
 - Added PostgreSQL, Flyway, validation, Actuator, and Testcontainers dependencies.
