@@ -29,6 +29,12 @@ Hard deletion is limited to unassigned `CREATED` shipments so operational audit 
 
 Assignments move shipments from `CREATED` to `ASSIGNED`. A driver or vehicle can belong to only one shipment in `ASSIGNED` or `IN_TRANSIT`; the resource becomes eligible again after delivery or cancellation. The transition endpoint permits `ASSIGNED` to `IN_TRANSIT`, `IN_TRANSIT` to `DELIVERED`, and cancellation from `CREATED` or `ASSIGNED`. Terminal states cannot transition again.
 
+## Interactive documentation
+
+When the service is running, the generated OpenAPI description is available at `/v3/api-docs` and `/v3/api-docs.yaml`. Swagger UI is available at `/swagger-ui.html`.
+
+The document version uses `APP_VERSION`, which keeps local, release, and deployed API metadata aligned.
+
 ## Vehicle endpoints
 
 | Method | Path | Purpose |

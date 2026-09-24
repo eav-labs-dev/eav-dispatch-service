@@ -83,6 +83,11 @@ public class ShipmentService {
 
     /**
      * Updates details while preserving identity, reference, and status.
+     * Flushes persistence callbacks before mapping the response timestamp.
+     *
+     * @param id shipment identifier
+     * @param request validated editable details
+     * @return shipment with the persisted update timestamp
      */
     @Transactional
     public ShipmentResponse update(UUID id, UpdateShipmentRequest request) {
@@ -97,6 +102,7 @@ public class ShipmentService {
                 request.destination().trim(),
                 request.scheduledPickupAt()
         );
+        repository.flush();
         return ShipmentResponse.from(shipment);
     }
 
