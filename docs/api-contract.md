@@ -23,9 +23,17 @@ All JSON responses use the envelope:
 | `PUT` | `/api/v1/shipments/{id}/assignment` | Assign an active driver and vehicle |
 | `POST` | `/api/v1/shipments/{id}/transitions` | Apply an allowed lifecycle transition |
 | `GET` | `/api/v1/shipments/{id}/history` | Read chronological lifecycle audit history |
-| `DELETE` | `/api/v1/shipments/{id}` | Delete a shipment |
+| `DELETE` | `/api/v1/shipments/{id}` | Delete an unassigned `CREATED` shipment |
 
-Assignments move shipments from `CREATED` to `ASSIGNED`. The transition endpoint permits `ASSIGNED` to `IN_TRANSIT`, `IN_TRANSIT` to `DELIVERED`, and cancellation from `CREATED` or `ASSIGNED`. Terminal states cannot transition again.
+Hard deletion is limited to unassigned `CREATED` shipments so operational audit history cannot be erased after dispatch begins.
+
+Assignments move shipments from `CREATED` to `ASSIGNED`. A driver or vehicle can belong to only one shipment in `ASSIGNED` or `IN_TRANSIT`; the resource becomes eligible again after delivery or cancellation. The transition endpoint permits `ASSIGNED` to `IN_TRANSIT`, `IN_TRANSIT` to `DELIVERED`, and cancellation from `CREATED` or `ASSIGNED`. Terminal states cannot transition again.
+
+## Interactive documentation
+
+When the service is running, the generated OpenAPI description is available at `/v3/api-docs` and `/v3/api-docs.yaml`. Swagger UI is available at `/swagger-ui.html`.
+
+The document version uses `APP_VERSION`, which keeps local, release, and deployed API metadata aligned.
 
 ## Vehicle endpoints
 
