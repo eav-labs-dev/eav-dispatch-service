@@ -66,6 +66,13 @@ See [Deployment Guide](docs/deployment.md) for lifecycle and release-gate comman
 | Controlled lifecycle transitions and audit history | Planned |
 | OpenAPI and PostgreSQL Testcontainers tests | Planned |
 
+- Shipment CRUD with validated, unique business references
+- Driver and vehicle fleet management
+- Driver/vehicle assignment
+- Controlled shipment lifecycle transitions
+- Audit history
+- OpenAPI documentation
+- PostgreSQL integration tests
 Follow the [Shipment Reviewer Guide](docs/reviewer-guide.md) for a CRUD walkthrough and expected responses.
 
 Progress and intentional deferrals are tracked in the [Roadmap](docs/roadmap.md).

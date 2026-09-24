@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+
+- Vehicle CRUD with normalized unique registrations, fleet availability, payload limits, and Flyway persistence.
 - Added PostgreSQL 17 Testcontainers verification for Flyway and production column semantics.
 - Added generated OpenAPI 3 documentation and Swagger UI with runtime version metadata.
 - Added driver CRUD with normalized employee/licence identifiers, availability state, validation, and Flyway persistence.
