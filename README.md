@@ -6,7 +6,9 @@ Spring Boot microservice for shipments, drivers, vehicles, and dispatch workflow
 
 ## Project Status
 
-The Spring Boot application foundation is under active development on `dev`. The service has reproducible Maven, CI, PostgreSQL, and container foundations; dispatch capabilities are being added in bounded pull requests.
+Development is on `dev`; `main` has not yet received the MVP release. Shipment CRUD, request validation, normalized business references, PostgreSQL persistence, and the initial Flyway migration are implemented. Drivers, vehicles, assignment, lifecycle transitions, and audit history remain planned.
+
+CI runs Maven verification. Existing application tests use H2 in PostgreSQL compatibility mode; PostgreSQL Testcontainers coverage is still pending.
 
 ## About
 
@@ -16,11 +18,19 @@ The goal is to demonstrate practical engineering through clear documentation, cl
 
 ## Tech Stack
 
-Java, Spring Boot, PostgreSQL, Docker, GitHub Actions, Testcontainers.
+Java 17, Spring Boot 4.1.1, PostgreSQL, Flyway, Docker, and GitHub Actions. Testcontainers dependencies are present; database container tests are not yet implemented.
 
 ## Local Setup
 
-Requirements: Java 17+ and PostgreSQL 16+.
+Requirements: Java 17 and PostgreSQL. The Compose environment uses PostgreSQL 17.
+
+Start PostgreSQL and provision the database and role from `.env.example` before running the application. For a local development database using the supplied credentials:
+
+```bash
+docker compose up -d postgres
+```
+
+Then, from the repository root:
 
 ```bash
 cp .env.example .env
@@ -45,7 +55,16 @@ curl --fail http://localhost:8080/api/v1/health
 
 See [Deployment Guide](docs/deployment.md) for lifecycle and release-gate commands.
 
-## Planned MVP Features
+## MVP progress
+
+| Capability | Status |
+| --- | --- |
+| Shipment create, list, retrieve, update, and delete | Implemented |
+| Request validation and normalized unique references | Implemented |
+| PostgreSQL schema, Flyway, Docker, and Maven CI | Implemented |
+| Drivers, vehicles, and assignment | Planned |
+| Controlled lifecycle transitions and audit history | Planned |
+| OpenAPI and PostgreSQL Testcontainers tests | Planned |
 
 - Shipment CRUD with validated, unique business references
 - Driver and vehicle fleet management
@@ -54,6 +73,7 @@ See [Deployment Guide](docs/deployment.md) for lifecycle and release-gate comman
 - Audit history
 - OpenAPI documentation
 - PostgreSQL integration tests
+Follow the [Shipment Reviewer Guide](docs/reviewer-guide.md) for a CRUD walkthrough and expected responses.
 
 Progress and intentional deferrals are tracked in the [Roadmap](docs/roadmap.md).
 

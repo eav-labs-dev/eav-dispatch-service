@@ -19,6 +19,11 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class ShipmentService {
 
+    private static final List<ShipmentStatus> ACTIVE_ASSIGNMENT_STATUSES = List.of(
+            ShipmentStatus.ASSIGNED,
+            ShipmentStatus.IN_TRANSIT
+    );
+
     private final ShipmentRepository repository;
     private final ShipmentStatusHistoryRepository historyRepository;
     private final DriverRepository driverRepository;
@@ -78,6 +83,11 @@ public class ShipmentService {
 
     /**
      * Updates details while preserving identity, reference, and status.
+     * Flushes persistence callbacks before mapping the response timestamp.
+     *
+     * @param id shipment identifier
+     * @param request validated editable details
+     * @return shipment with the persisted update timestamp
      */
     @Transactional
     public ShipmentResponse update(UUID id, UpdateShipmentRequest request) {
@@ -92,6 +102,7 @@ public class ShipmentService {
                 request.destination().trim(),
                 request.scheduledPickupAt()
         );
+        repository.flush();
         return ShipmentResponse.from(shipment);
     }
 
@@ -105,9 +116,9 @@ public class ShipmentService {
     @Transactional
     public ShipmentResponse assign(UUID id, AssignShipmentRequest request) {
         var shipment = find(id);
-        var driver = driverRepository.findById(request.driverId())
+        var driver = driverRepository.findByIdForUpdate(request.driverId())
                 .orElseThrow(() -> new ResourceNotFoundException("Driver not found"));
-        var vehicle = vehicleRepository.findById(request.vehicleId())
+        var vehicle = vehicleRepository.findByIdForUpdate(request.vehicleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found"));
 
         if (!driver.isActive()) {
@@ -119,6 +130,7 @@ public class ShipmentService {
         if (!vehicle.isActive()) {
             throw new ResourceConflictException("Inactive vehicle cannot be assigned");
         }
+        rejectActiveAssignment(driver.getId(), vehicle.getId());
 
         var previousStatus = shipment.getStatus();
         shipment.assign(driver, vehicle);
@@ -159,12 +171,29 @@ public class ShipmentService {
                 .toList();
     }
 
+    /**
+     * Deletes a shipment only before operational dispatch begins.
+     *
+     * @param id shipment identifier
+     */
     @Transactional
     public void delete(UUID id) {
         var shipment = find(id);
+        if (shipment.getStatus() != ShipmentStatus.CREATED) {
+            throw new ResourceConflictException("Only created shipments can be deleted");
+        }
         historyRepository.deleteAllByShipmentId(id);
         historyRepository.flush();
         repository.delete(shipment);
+    }
+
+    private void rejectActiveAssignment(UUID driverId, UUID vehicleId) {
+        if (repository.existsByDriverIdAndStatusIn(driverId, ACTIVE_ASSIGNMENT_STATUSES)) {
+            throw new ResourceConflictException("Driver is already assigned to an active shipment");
+        }
+        if (repository.existsByVehicleIdAndStatusIn(vehicleId, ACTIVE_ASSIGNMENT_STATUSES)) {
+            throw new ResourceConflictException("Vehicle is already assigned to an active shipment");
+        }
     }
 
     private Shipment find(UUID id) {
