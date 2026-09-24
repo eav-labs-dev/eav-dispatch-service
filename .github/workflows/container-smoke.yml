@@ -1,0 +1,70 @@
+name: Container smoke test
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: container-smoke-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compose-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Validate Compose configuration
+        run: docker compose config --quiet
+
+      - name: Build and start application stack
+        run: docker compose up --build --detach
+
+      - name: Wait for application health
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..60}; do
+            if curl --fail --silent --show-error http://localhost:8080/actuator/health \
+              | jq --exit-status '.status == "UP"' > /dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl --fail --silent --show-error http://localhost:8080/actuator/health \
+            | jq --exit-status '.status == "UP"' > /dev/null || {
+              docker compose logs
+              exit 1
+            }
+
+      - name: Verify public API contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error http://localhost:8080/api/v1/health \
+            | jq --exit-status '
+                .success == true
+                and .code == "HEALTHY"
+                and .data.service == "eav-dispatch-service"
+                and .data.status == "UP"
+                and .data.version == "0.1.0-SNAPSHOT"
+              ' > /dev/null
+
+      - name: Verify non-root runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          container_uid="$(docker compose exec --no-TTY api id --user)"
+          test "$container_uid" -ne 0
+          docker compose ps
+
+      - name: Stop application stack
+        if: always()
+        run: docker compose down --volumes
