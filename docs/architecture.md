@@ -4,44 +4,114 @@
 
 EAV Dispatch is a Spring Boot service for coordinating shipments, drivers, and vehicles. It exposes versioned HTTP resources and stores operational state in PostgreSQL.
 
-The MVP is intentionally a modular monolith. Shipment, driver, vehicle, assignment, and audit capabilities live in one deployable service while retaining explicit package boundaries. This keeps local operation and review straightforward without preventing later extraction when scale or ownership requires it.
+The MVP is a modular monolith: one deployable application with explicit domain package boundaries. This keeps local operation and review straightforward while leaving room for later extraction if scale or ownership requires it.
 
-## Application shape
+## Request flow
 
 ```text
 HTTP request
     |
-controller and request validation
+controller + request validation
     |
-application service and business rules
+domain/application service + business rules
     |
 Spring Data repository
     |
 PostgreSQL schema managed by Flyway
 ```
 
-Shared API response and exception-handling types provide a stable external envelope without coupling domain objects directly to HTTP responses.
+Shared response and exception types keep the external API envelope stable without exposing persistence entities directly.
 
-## Data ownership
+## Implemented domain boundaries
 
-PostgreSQL is the source of truth. Hibernate validates mappings against the schema but does not create or mutate production tables. Flyway migrations are append-only and run during application startup.
+### `shipment`
 
-The test profile uses H2 for fast foundation and service tests. A separate Testcontainers integration test starts PostgreSQL 17, applies Flyway migrations, lets Hibernate validate the mappings, and checks PostgreSQL-specific column semantics. This keeps the fast feedback loop while exercising the production database engine in CI.
+Owns shipment details, assignment orchestration, lifecycle transitions, and lifecycle history.
 
-## Configuration
+The lifecycle is deliberately constrained:
 
-Runtime configuration is supplied through environment variables. Secrets are never committed; `.env.example` documents local-only defaults. Docker Compose uses service-network values explicitly and does not read an untracked developer `.env` file.
+```text
+CREATED
+  |
+  +--> ASSIGNED --> IN_TRANSIT --> DELIVERED
+  |
+  +--> CANCELLED
+
+ASSIGNED --> CANCELLED
+```
+
+Skipped, reversed, and terminal-state transitions are rejected.
+
+Once dispatch begins, hard deletion is blocked so operational history remains available.
+
+### `driver`
+
+Owns driver identity, licence data, active state, and assignment eligibility.
+
+Employee and licence identifiers are normalized and unique.
+
+### `vehicle`
+
+Owns fleet identity, vehicle type, payload information, active state, and assignment eligibility.
+
+Registration numbers are normalized and unique.
+
+## Assignment and concurrency
+
+Assignment requires an eligible active driver, a valid licence, and an active vehicle.
+
+A driver or vehicle may belong to only one shipment in `ASSIGNED` or `IN_TRANSIT`. The repositories combine active-assignment queries with pessimistic row locking so concurrent assignment requests serialize against the shared resources.
+
+Delivery or cancellation releases the resources for later assignment.
+
+## Audit history
+
+Shipment creation, assignment, lifecycle transitions, and cancellation produce chronological persisted history records.
+
+Audit history is stored in PostgreSQL and remains readable after terminal delivery. Dispatched shipments cannot be hard-deleted, preventing routine API operations from erasing their operational record.
+
+## Persistence
+
+PostgreSQL is the source of truth. Hibernate validates mappings but does not create or mutate the production schema.
+
+Flyway migrations are append-only:
+
+- V1: shipments
+- V2: drivers
+- V3: vehicles
+- V4: assignment and lifecycle-history workflow
+
+## Testing strategy
+
+The project uses several verification layers:
+
+- focused validation/service tests;
+- H2-backed fast application tests;
+- PostgreSQL 17 Testcontainers integration tests;
+- complete dispatch workflow verification;
+- concurrent assignment verification against PostgreSQL;
+- containerized runtime smoke testing.
+
+The PostgreSQL workflow tests verify Flyway migrations, persistence mappings, assignment rules, resource reuse, audit retention, and database-locking behavior against the production database engine.
+
+## Configuration and runtime
+
+Runtime configuration is supplied through environment variables. Secrets are not committed; `.env.example` documents the expected contract.
+
+The production image runs as a non-root user. Spring Boot exposes separate liveness and database-aware readiness probes and handles graceful shutdown.
 
 ## Delivery model
 
-GitHub Actions executes the Maven verification lifecycle on pushes to `dev` and `main` and on pull requests. The multi-stage Dockerfile builds the executable jar and runs it as a non-root user. `compose.yml` provides a reproducible application-and-database environment for local review.
+GitHub Actions provides:
 
-## Planned boundaries
+- Maven verification;
+- CodeQL security analysis;
+- Compose/container smoke testing;
+- release-image build verification;
+- semantic-version container publishing only after an explicit release tag.
 
-- `shipment`: shipment details and controlled lifecycle transitions.
-- `driver`: driver identity and availability.
-- `vehicle`: fleet identity and capacity.
-- `assignment`: shipment-to-driver/vehicle allocation rules.
-- `audit`: immutable history for operational state changes.
+The MVP does not claim a live public deployment.
 
-Authentication, multi-tenancy, event streaming, route optimization, and a web dashboard are deliberately outside the first MVP.
+## Intentional post-MVP boundaries
+
+Authentication, role-based authorization, multi-tenancy, route optimization, event streaming, pagination, and an operations dashboard are deliberately outside the first portfolio MVP.
