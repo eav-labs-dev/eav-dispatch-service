@@ -14,6 +14,8 @@ public record ShipmentResponse(
         String origin,
         String destination,
         ShipmentStatus status,
+        UUID driverId,
+        UUID vehicleId,
         OffsetDateTime scheduledPickupAt,
         Instant createdAt,
         Instant updatedAt
@@ -33,6 +35,8 @@ public record ShipmentResponse(
                 shipment.getOrigin(),
                 shipment.getDestination(),
                 shipment.getStatus(),
+                shipment.getDriver() == null ? null : shipment.getDriver().getId(),
+                shipment.getVehicle() == null ? null : shipment.getVehicle().getId(),
                 shipment.getScheduledPickupAt(),
                 shipment.getCreatedAt(),
                 shipment.getUpdatedAt()
