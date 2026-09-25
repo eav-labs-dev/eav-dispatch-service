@@ -2,15 +2,19 @@
 
 Dispatch uses reviewed source promotion and immutable container tags. A release does not claim a live deployment.
 
-## Preconditions
+## Current release candidate
 
-Before creating a release tag:
+The complete portfolio MVP is integrated on `dev`.
 
-1. Merge the approved feature and quality pull requests into `dev`.
-2. Confirm Maven CI, PostgreSQL integration tests, CodeQL, and the container smoke test are green.
-3. Run the reviewer demo against a clean Compose environment.
-4. Reconcile the README, changelog, roadmap, and architecture notes.
-5. Merge an approved `dev` to `main` release pull request.
+Before promotion to `main`, the release candidate must keep the following checks green:
+
+- Maven CI;
+- PostgreSQL workflow verification;
+- CodeQL;
+- container smoke testing;
+- release-image build verification.
+
+The final release PR should also confirm that README, roadmap, changelog, architecture, API contract, reviewer demo, deployment notes, and known limitations describe the integrated code accurately.
 
 ## MVP acceptance gate
 
@@ -18,60 +22,68 @@ Mark the release candidate **GO** only when every item below is demonstrated on 
 
 ### Functional behavior
 
-- Shipment create, read, list, update, and delete operations use validated business references.
-- Driver and vehicle resources enforce identifier uniqueness and assignment availability.
+- Shipment create, read, list, update, and controlled delete operations use validated business references.
+- Driver and vehicle resources enforce identifier uniqueness and availability rules.
 - A shipment can be assigned only to an eligible driver and active vehicle.
+- Drivers and vehicles cannot be double-booked while assigned to active shipments.
 - Lifecycle changes follow the documented transition graph and reject skipped, reversed, or terminal-state changes.
-- Creation, assignment, and status changes produce chronological, immutable audit history.
+- Creation, assignment, and status changes produce chronological persisted audit history.
+- Dispatched shipments retain their operational history and cannot be hard-deleted.
 
 ### Data and API contracts
 
-- Flyway applies the complete schema history to an empty PostgreSQL 17 database.
-- Hibernate validates mappings without creating or changing the production schema.
-- PostgreSQL Testcontainers tests cover persistence and the complete dispatch workflow.
-- OpenAPI documents the public endpoints and the stable success/error response envelope.
-- Malformed input, invalid parameters, missing resources, and data conflicts return documented status codes without leaking persistence details.
+- Flyway applies V1-V4 to an empty PostgreSQL 17 database.
+- Hibernate validates mappings without owning production schema creation.
+- PostgreSQL Testcontainers tests cover persistence and the dispatch workflow.
+- Concurrent assignment tests exercise database locking against PostgreSQL.
+- OpenAPI documents the public endpoints and stable success/error response envelope.
+- Malformed input, invalid parameters, missing resources, and data conflicts return controlled status codes without leaking persistence details.
 
 ### Runtime and delivery
 
-- `./mvnw verify` passes from a clean checkout.
+- `./mvnw verify` passes in CI from the integrated source.
 - CodeQL completes without an unresolved release-blocking finding.
 - The production image builds and runs as a non-root user.
-- The Compose smoke test reaches both the public health resource and the Actuator readiness probe.
-- Runtime configuration is environment-driven, credentials stay outside source control, and graceful shutdown is enabled.
-- A pull-request run of the release workflow builds the image with publishing disabled.
+- The Compose smoke test reaches the public health resource and Actuator readiness probe.
+- Runtime configuration is environment-driven and graceful shutdown is enabled.
+- Pull-request release checks build the image without publishing it.
 
 ### Review evidence
 
-Record these links or values in the `dev` to `main` release pull request:
+Record these values in the `dev → main` release pull request:
 
 | Evidence | Required value |
 | --- | --- |
 | Integrated commit | Exact `dev` commit SHA |
 | Maven CI | Successful workflow run |
-| PostgreSQL workflow | Successful run using PostgreSQL 17 |
+| PostgreSQL workflow | Successful PostgreSQL 17 verification |
 | Container smoke test | Successful Compose run |
-| CodeQL | Successful analysis run |
-| Reviewer demo | Commands used and observed result |
-| Schema | Flyway versions included in the release |
+| CodeQL | Successful analysis |
+| Reviewer demo | Documented commands and expected results |
+| Schema | Flyway V1-V4 |
 | Known limits | Explicit post-MVP items from the roadmap |
 
-Any failed or missing item is **NO-GO** until corrected or explicitly removed from the MVP scope in a reviewed change. A live deployment is not required for the portfolio MVP, and must not be claimed without a verifiable deployment URL.
+Any failed or missing release-blocking item is **NO-GO** until corrected. A live deployment is not required for the portfolio MVP.
 
-## Integration discipline
+## Promote to main
 
-Integrate independent foundation, reliability, documentation, and delivery changes before stacked domain branches. Merge driver management before vehicle management, then retarget the assignment workflow to `dev` and verify that its diff contains only assignment, lifecycle, audit, and related documentation. Retarget workflow-level PostgreSQL tests and the reviewer demo only after the assignment workflow lands.
+Open a reviewed release pull request from `dev` to `main`.
 
-After each integration step:
+The release PR should summarize:
 
-1. Update the next dependent branch from `dev` without rewriting reviewed history.
-2. Recheck the pull-request diff for duplicated migrations or changelog entries.
-3. Run all checks required by that branch.
-4. Stop the sequence if Flyway versions, API contracts, or lifecycle rules conflict.
+- shipment, driver, and vehicle capabilities;
+- assignment and lifecycle safeguards;
+- audit-history behavior;
+- PostgreSQL/Flyway schema;
+- test and CI evidence;
+- container/release readiness;
+- known post-MVP limitations.
+
+Do not merge the release PR until its checks are green.
 
 ## Publish a container
 
-Create a signed semantic-version tag from the verified commit on `main`:
+After the approved release is on `main`, create a signed semantic-version tag:
 
 ```bash
 git switch main
@@ -80,22 +92,24 @@ git tag -s v0.1.0 -m "EAV Dispatch 0.1.0"
 git push origin v0.1.0
 ```
 
-The release workflow builds the repository Dockerfile and publishes the image to GitHub Container Registry. A `v0.1.0` tag produces:
+The release workflow publishes:
 
 - `ghcr.io/eav-labs-dev/eav-dispatch-service:0.1.0`
 - `ghcr.io/eav-labs-dev/eav-dispatch-service:0.1`
 - an immutable commit-SHA tag
 
-The image includes BuildKit SBOM and provenance attestations. Pull requests that change the release workflow or Dockerfile build the image without publishing it.
+The image includes BuildKit SBOM and provenance attestations.
 
-## Verify the published artifact
+## Verify and roll back
 
 ```bash
 docker pull ghcr.io/eav-labs-dev/eav-dispatch-service:0.1.0
 docker image inspect ghcr.io/eav-labs-dev/eav-dispatch-service:0.1.0
 ```
 
-Deployments must inject the runtime variables documented in [Deployment Guide](deployment.md) and use a managed PostgreSQL database. Rollback means redeploying a previously verified immutable version tag; database migrations remain forward-only.
+Deployments must inject the variables documented in [Deployment Guide](deployment.md) and use an external PostgreSQL service.
+
+Rollback means redeploying a previously verified immutable version tag. Database migrations remain forward-only.
 
 ## Release record
 
@@ -107,4 +121,4 @@ Create a GitHub release from the signed tag and summarize:
 - known MVP limits;
 - upgrade or rollback considerations.
 
-Do not publish from an unreviewed branch, reuse an existing version tag, or place credentials in workflow files.
+Do not claim a public deployment unless a verifiable deployment exists.
