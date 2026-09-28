@@ -1,0 +1,58 @@
+name: Deploy to OCI
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oci-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.OCI_DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.OCI_DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy main to OCI
+        env:
+          DEPLOY_HOST: ${{ secrets.OCI_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.OCI_DEPLOY_USER }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "${DEPLOY_USER}@${DEPLOY_HOST}" <<'EOF'
+            set -euo pipefail
+            cd /opt/eav/dispatch/app
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+            docker compose --env-file .env.production -f compose.prod.yml up -d --build --remove-orphans
+            docker image prune -f
+            curl --fail --retry 12 --retry-delay 5 http://127.0.0.1:8080/actuator/health/readiness
+          EOF
+
+      - name: Verify public HTTPS health
+        run: |
+          curl --fail --retry 12 --retry-delay 5 https://dispatch.env.pm/actuator/health/readiness
