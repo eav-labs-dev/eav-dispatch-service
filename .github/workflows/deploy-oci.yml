@@ -28,11 +28,11 @@ jobs:
     steps:
       - name: Configure SSH
         env:
-          DEPLOY_SSH_KEY_B64: ${{ secrets.OCI_DEPLOY_SSH_KEY_B64 }}
+          DEPLOY_SSH_KEY_HEX: ${{ secrets.OCI_DEPLOY_SSH_KEY_HEX }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.OCI_DEPLOY_KNOWN_HOSTS }}
         run: |
           install -m 700 -d ~/.ssh
-          printf '%s' "$DEPLOY_SSH_KEY_B64" | base64 --decode > ~/.ssh/id_ed25519
+          printf '%s' "$DEPLOY_SSH_KEY_HEX" | xxd -r -p > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
