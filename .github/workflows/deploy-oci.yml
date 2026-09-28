@@ -43,7 +43,7 @@ jobs:
           DEPLOY_HOST: ${{ secrets.OCI_DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.OCI_DEPLOY_USER }}
         run: |
-          ssh -i ~/.ssh/id_ed25519 "${DEPLOY_USER}@${DEPLOY_HOST}" <<'EOF'
+          ssh -T -i ~/.ssh/id_ed25519 "${DEPLOY_USER}@${DEPLOY_HOST}" 'bash -se' <<'EOF'
             set -euo pipefail
             cd /opt/eav/dispatch/app
             git fetch origin main
@@ -52,21 +52,27 @@ jobs:
             docker compose --env-file .env.production -f compose.prod.yml up -d --build --remove-orphans
             docker image prune -f
 
+            ready=false
             for attempt in $(seq 1 24); do
               if curl --fail --silent --show-error http://127.0.0.1:8080/actuator/health/readiness; then
                 echo
                 echo "Dispatch readiness check passed."
-                exit 0
+                ready=true
+                break
               fi
 
               echo "Dispatch is not ready yet (attempt ${attempt}/24); retrying in 5 seconds..."
               sleep 5
             done
 
-            echo "Dispatch did not become ready within 120 seconds."
-            docker compose --env-file .env.production -f compose.prod.yml ps
-            docker logs eav-dispatch-api --tail 200
-            exit 1
+            if [ "$ready" != "true" ]; then
+              echo "Dispatch did not become ready within 120 seconds."
+              docker compose --env-file .env.production -f compose.prod.yml ps
+              docker logs eav-dispatch-api --tail 200
+              exit 1
+            fi
+
+            echo "OCI_DEPLOY_OK"
           EOF
 
       - name: Verify public HTTPS health
