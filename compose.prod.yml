@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: eav-dispatch-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: eav_dispatch
+      POSTGRES_USER: eav_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - eav_dispatch_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eav_user -d eav_dispatch"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eav-dispatch-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/eav_dispatch
+      DATABASE_USERNAME: eav_user
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      PORT: 8080
+      APP_VERSION: 0.1.0-SNAPSHOT
+      SHUTDOWN_TIMEOUT: 20s
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    stop_grace_period: 25s
+
+volumes:
+  eav_dispatch_postgres:
