@@ -1,17 +1,21 @@
 # EAV Dispatch Service
 
-[![CI](https://github.com/eav-labs-dev/eav-dispatch-service/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/eav-labs-dev/eav-dispatch-service/actions/workflows/ci.yml)
-[![Security](https://github.com/eav-labs-dev/eav-dispatch-service/actions/workflows/security.yml/badge.svg?branch=dev)](https://github.com/eav-labs-dev/eav-dispatch-service/actions/workflows/security.yml)
+[![CI](https://github.com/eav-labs-dev/eav-dispatch-service/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/eav-labs-dev/eav-dispatch-service/actions/workflows/ci.yml)
+[![Security](https://github.com/eav-labs-dev/eav-dispatch-service/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/eav-labs-dev/eav-dispatch-service/actions/workflows/security.yml)
+[![Deploy](https://github.com/eav-labs-dev/eav-dispatch-service/actions/workflows/deploy-oci.yml/badge.svg?branch=main)](https://github.com/eav-labs-dev/eav-dispatch-service/actions/workflows/deploy-oci.yml)
 
 Spring Boot logistics API for shipments, drivers, vehicles, assignments, controlled delivery lifecycles, and auditable dispatch workflows.
 
 ## Status
 
-The portfolio MVP is feature-complete on `dev` and is being prepared for promotion to `main`.
+The portfolio MVP is deployed from `main` to an Oracle Cloud Infrastructure ARM64 VM through GitHub Actions.
 
-The integrated service includes shipment, driver, and vehicle management; guarded driver/vehicle assignment; controlled shipment transitions; immutable lifecycle history; PostgreSQL/Flyway persistence; OpenAPI; Testcontainers; Docker/Compose; CI; container smoke testing; CodeQL; and a versioned container-release workflow.
+The production stack runs EAV Dispatch and PostgreSQL with Docker Compose, keeps PostgreSQL private on the Docker network, exposes the API only through Caddy, and serves HTTPS at [dispatch.env.pm](https://dispatch.env.pm).
 
-There is no claimed public production deployment.
+- Live API: [https://dispatch.env.pm](https://dispatch.env.pm)
+- Swagger UI: [https://dispatch.env.pm/swagger-ui.html](https://dispatch.env.pm/swagger-ui.html)
+- OpenAPI JSON: [https://dispatch.env.pm/v3/api-docs](https://dispatch.env.pm/v3/api-docs)
+- Readiness: [https://dispatch.env.pm/actuator/health/readiness](https://dispatch.env.pm/actuator/health/readiness)
 
 ## Core capabilities
 
@@ -40,6 +44,8 @@ There is no claimed public production deployment.
 - springdoc OpenAPI / Swagger UI
 - Testcontainers and H2 for automated verification
 - Docker and Docker Compose
+- Oracle Cloud Infrastructure (ARM64)
+- Caddy reverse proxy and automatic HTTPS
 - GitHub Actions and CodeQL
 
 ## Architecture
@@ -76,11 +82,11 @@ Run Maven verification:
 ./mvnw verify
 ```
 
-Generated API documentation is available while the service is running:
+Generated API documentation is available locally and in production:
 
-- OpenAPI JSON: `/v3/api-docs`
-- OpenAPI YAML: `/v3/api-docs.yaml`
-- Swagger UI: `/swagger-ui.html`
+- Swagger UI: [https://dispatch.env.pm/swagger-ui.html](https://dispatch.env.pm/swagger-ui.html)
+- OpenAPI JSON: [https://dispatch.env.pm/v3/api-docs](https://dispatch.env.pm/v3/api-docs)
+- OpenAPI YAML: [https://dispatch.env.pm/v3/api-docs.yaml](https://dispatch.env.pm/v3/api-docs.yaml)
 
 ## Reviewer workflow
 
@@ -108,7 +114,8 @@ The repository verifies the MVP through:
 - CodeQL security analysis;
 - a non-root production image;
 - liveness/readiness probes and graceful shutdown;
-- a release workflow that builds on pull requests and publishes only after a deliberate semantic-version tag.
+- an OCI deployment workflow that deploys `main` after CI succeeds and verifies local and public readiness;
+- a release workflow that publishes semantic-versioned container images.
 
 See [Deployment Guide](docs/deployment.md) and [Release Process](docs/release.md).
 
@@ -121,8 +128,7 @@ The following are intentionally post-MVP:
 - route planning and optimization;
 - asynchronous domain events and notifications;
 - pagination for larger collections;
-- an operations dashboard;
-- public production deployment.
+- an operations dashboard.
 
 These limits are tracked in the [Roadmap](docs/roadmap.md).
 
