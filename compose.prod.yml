@@ -37,4 +37,5 @@ services:
 
 volumes:
   eav_dispatch_postgres:
+    external: true
     name: app_eav_dispatch_postgres17
