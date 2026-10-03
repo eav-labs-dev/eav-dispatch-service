@@ -33,6 +33,7 @@ The production stack runs EAV Dispatch and PostgreSQL with Docker Compose, keeps
 | PostgreSQL Testcontainers workflow verification | Implemented |
 | Docker/Compose runtime | Implemented |
 | CI, CodeQL, container smoke test, and release pipeline | Implemented |
+| Per-client API throttling and request-size protection | Implemented |
 
 ## Tech stack
 
@@ -103,6 +104,16 @@ It demonstrates:
 7. rejecting terminal-state mutation and hard deletion.
 
 The concise API surface is documented in [API Contract](docs/api-contract.md).
+
+## HTTP safeguards
+
+Business endpoints under `/api/` are limited per client address. The public
+`/api/v1/health` endpoint and Actuator probes are exempt so deployment health checks remain
+reliable. Limit breaches return HTTP `429` in the stable API envelope with `Retry-After` and
+rate-limit headers; declared request bodies above the configured maximum return HTTP `413`.
+
+The defaults are `120` requests per minute and `1 MiB` per request. Configure them with
+`DISPATCH_RATE_LIMIT_REQUESTS_PER_MINUTE` and `DISPATCH_MAX_REQUEST_BODY_BYTES`.
 
 ## Verification and delivery
 
