@@ -7,8 +7,9 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.MediaType;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -34,6 +35,7 @@ public class HttpProtectionFilter extends OncePerRequestFilter {
     private final Clock clock;
     private final Map<String, Window> windows = new ConcurrentHashMap<>();
 
+    @Autowired
     public HttpProtectionFilter(HttpProtectionProperties properties, ObjectMapper objectMapper) {
         this(properties, objectMapper, Clock.systemUTC());
     }
