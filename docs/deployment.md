@@ -38,6 +38,9 @@ The service requires these environment variables:
 | `PORT` | HTTP port; defaults to `8080` |
 | `APP_VERSION` | Version reported by the health resource |
 | `SHUTDOWN_TIMEOUT` | Maximum time for in-flight requests to finish during shutdown; defaults to `20s` |
+| `SERVER_CONNECTION_TIMEOUT` | Time allowed to establish/read the request connection; defaults to `5s` |
+| `DISPATCH_RATE_LIMIT_REQUESTS_PER_MINUTE` | Per-client application limit; defaults to `120` |
+| `DISPATCH_MAX_REQUEST_BODY_BYTES` | Maximum declared API request body; defaults to `1048576` (1 MiB) |
 
 A deployment platform should inject credentials through its secret store, run one application instance for the initial MVP, and provide a managed PostgreSQL database with backups. Forwarded headers are interpreted through Spring's framework strategy so generated URLs and request metadata remain correct behind a trusted proxy.
 
@@ -49,6 +52,12 @@ Use the Actuator probe groups for orchestration:
 | Readiness | `/actuator/health/readiness` | The application and PostgreSQL dependency can receive traffic |
 
 Health details are not exposed. The public reviewer endpoint remains `/api/v1/health`, while deployment traffic should use the readiness probe. The service handles `SIGTERM` with graceful shutdown and gives in-flight requests up to `SHUTDOWN_TIMEOUT` to finish.
+
+The application enforces a per-client fixed-window limit for business API routes and emits a
+stable JSON `429` response. Public and Actuator health routes are exempt. Caddy should still
+apply connection, header, and body controls at the edge; application throttling is the final
+service-level guard. The current limiter is process-local and is appropriate for the single
+MVP instance. Use a shared Redis-backed limiter before horizontally scaling.
 
 ## Release gate
 

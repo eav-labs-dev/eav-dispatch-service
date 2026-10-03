@@ -18,6 +18,13 @@ server:
   port: ${PORT:8080}
   shutdown: graceful
   forward-headers-strategy: framework
+  tomcat:
+    connection-timeout: ${SERVER_CONNECTION_TIMEOUT:5s}
+
+dispatch:
+  http:
+    requests-per-minute: ${DISPATCH_RATE_LIMIT_REQUESTS_PER_MINUTE:120}
+    max-request-body-bytes: ${DISPATCH_MAX_REQUEST_BODY_BYTES:1048576}
 
 management:
   endpoints:
