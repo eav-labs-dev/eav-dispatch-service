@@ -1,8 +1,5 @@
 package dev.eavlabs.dispatch.shared.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.eavlabs.dispatch.shared.api.ApiError;
-import dev.eavlabs.dispatch.shared.api.ApiResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,7 +12,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Clock;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -31,18 +27,16 @@ public class HttpProtectionFilter extends OncePerRequestFilter {
     private static final int CLEANUP_THRESHOLD = 10_000;
 
     private final HttpProtectionProperties properties;
-    private final ObjectMapper objectMapper;
     private final Clock clock;
     private final Map<String, Window> windows = new ConcurrentHashMap<>();
 
     @Autowired
-    public HttpProtectionFilter(HttpProtectionProperties properties, ObjectMapper objectMapper) {
-        this(properties, objectMapper, Clock.systemUTC());
+    public HttpProtectionFilter(HttpProtectionProperties properties) {
+        this(properties, Clock.systemUTC());
     }
 
-    HttpProtectionFilter(HttpProtectionProperties properties, ObjectMapper objectMapper, Clock clock) {
+    HttpProtectionFilter(HttpProtectionProperties properties, Clock clock) {
         this.properties = properties;
-        this.objectMapper = objectMapper;
         this.clock = clock;
     }
 
@@ -103,8 +97,9 @@ public class HttpProtectionFilter extends OncePerRequestFilter {
             throws IOException {
         response.setStatus(status);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        var error = new ApiError(code, Map.of());
-        objectMapper.writeValue(response.getOutputStream(), ApiResponse.failure(code, message, error));
+        response.getWriter().write("""
+                {"success":false,"code":"%s","message":"%s","data":null,"error":{"type":"%s","fields":{}}}
+                """.formatted(code, message, code).trim());
     }
 
     private record Window(long minute, int count) {

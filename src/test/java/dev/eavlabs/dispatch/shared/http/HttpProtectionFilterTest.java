@@ -1,6 +1,5 @@
 package dev.eavlabs.dispatch.shared.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -54,7 +53,6 @@ class HttpProtectionFilterTest {
     private HttpProtectionFilter filterWith(int limit, long maxBodyBytes) {
         return new HttpProtectionFilter(
                 new HttpProtectionProperties(limit, maxBodyBytes),
-                new ObjectMapper(),
                 FIXED_CLOCK
         );
     }
