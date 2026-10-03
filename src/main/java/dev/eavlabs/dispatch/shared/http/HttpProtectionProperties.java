@@ -2,6 +2,7 @@ package dev.eavlabs.dispatch.shared.http;
 
 import jakarta.validation.constraints.Min;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.validation.annotation.Validated;
 
 /**
@@ -13,7 +14,7 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "dispatch.http")
 public record HttpProtectionProperties(
-        @Min(1) int requestsPerMinute,
-        @Min(1) long maxRequestBodyBytes
+        @DefaultValue("120") @Min(1) int requestsPerMinute,
+        @DefaultValue("1048576") @Min(1) long maxRequestBodyBytes
 ) {
 }
