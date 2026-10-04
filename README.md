@@ -114,6 +114,8 @@ rate-limit headers; declared request bodies above the configured maximum return 
 
 The defaults are `120` requests per minute and `1 MiB` per request. Configure them with
 `DISPATCH_RATE_LIMIT_REQUESTS_PER_MINUTE` and `DISPATCH_MAX_REQUEST_BODY_BYTES`.
+All responses include `nosniff`, anti-framing, no-referrer, and restrictive browser-feature
+headers. TLS-only HSTS remains the responsibility of the Caddy edge.
 
 ## Verification and delivery
 

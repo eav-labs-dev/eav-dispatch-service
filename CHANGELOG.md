@@ -20,7 +20,7 @@
 - CodeQL security analysis.
 - Versioned GHCR release workflow with SBOM and provenance metadata.
 - Reviewer guides, full MVP demo, architecture notes, deployment guidance, and release gate.
-- Per-client API throttling, stable HTTP 429 responses, health-check exemptions, request-size limits, and connection timeouts.
+- Per-client API throttling, stable HTTP 429 responses, health-check exemptions, request-size limits, connection timeouts, and defensive response headers.
 
 ### Changed
 

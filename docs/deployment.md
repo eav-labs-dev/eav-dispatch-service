@@ -59,6 +59,10 @@ apply connection, header, and body controls at the edge; application throttling 
 service-level guard. The current limiter is process-local and is appropriate for the single
 MVP instance. Use a shared Redis-backed limiter before horizontally scaling.
 
+The application emits API-safe `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
+and `Permissions-Policy` headers on every response. Configure HSTS at Caddy, where HTTPS
+terminates, so local HTTP development and direct container health checks remain usable.
+
 ## Release gate
 
 Before promoting `dev` to `main`:
