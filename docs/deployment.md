@@ -62,6 +62,8 @@ MVP instance. Use a shared Redis-backed limiter before horizontally scaling.
 The application emits API-safe `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
 and `Permissions-Policy` headers on every response. Configure HSTS at Caddy, where HTTPS
 terminates, so local HTTP development and direct container health checks remain usable.
+After each OCI deployment, the workflow checks the public readiness endpoint and fails unless
+all four defensive headers survive the complete HTTPS/Caddy path.
 
 ## Release gate
 
